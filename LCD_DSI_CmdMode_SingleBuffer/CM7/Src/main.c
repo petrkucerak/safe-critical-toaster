@@ -159,6 +159,9 @@ int main(void)
    /* Enable DSI Wrapper so DSI IP will drive the LTDC */
    __HAL_DSI_WRAPPER_ENABLE(&hlcd_dsi);
 
+   /* Clear display */
+   UTIL_LCD_Clear(UTIL_LCD_COLOR_WHITE);
+
    /* Display example brief   */
    LCD_MainDisplay();
 
@@ -518,7 +521,23 @@ static void LCD_BriefDisplay(void)
 
 static void LCD_MainDisplay(void)
 {
-   UTIL_LCD_FillRect(0, 0, 800, 400, UTIL_LCD_COLOR_BLUE);
+   UTIL_LCD_SetFont(&Font24);
+   UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_BLACK);
+   UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_WHITE);
+   UTIL_LCD_DisplayStringAtLine(2, (uint8_t *)"               TOUSTER CONTROLLER");
+   UTIL_LCD_FillCircle(200, 220, 90, UTIL_LCD_COLOR_DARKBLUE);
+   UTIL_LCD_FillCircle(600, 220, 90, UTIL_LCD_COLOR_DARKBLUE);
+
+   UTIL_LCD_SetFont(&Font20);
+   UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_BLACK);
+   UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_WHITE);
+   UTIL_LCD_DisplayStringAtLine(17, (uint8_t *)"        MANUALLY START               SETUP TIMER");
+
+   UTIL_LCD_SetFont(&Font16);
+   UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_BLACK);
+   UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_WHITE);
+   UTIL_LCD_DisplayStringAtLine(26, (uint8_t *)"  Stopped");
+   UTIL_LCD_FillRect(20, 440, 760, 20, UTIL_LCD_COLOR_RED);
 }
 
 /**

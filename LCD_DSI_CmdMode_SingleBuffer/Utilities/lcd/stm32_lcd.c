@@ -70,6 +70,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32_lcd.h"
+#include "../Fonts/font_avenirNext20.c"
+#include "../Fonts/font_comingSans20.c"
+#include "../Fonts/font_menlo32.c"
 #include "../Fonts/font24.c"
 #include "../Fonts/font20.c"
 #include "../Fonts/font16.c"

@@ -55,6 +55,9 @@ typedef struct _tFont
   uint16_t Height;
 } sFONT;
 
+extern sFONT FontAvenirNext20;
+extern sFONT FontComicSansMS20;
+extern sFONT FontMenlo32;
 extern sFONT Font24;
 extern sFONT Font20;
 extern sFONT Font16;

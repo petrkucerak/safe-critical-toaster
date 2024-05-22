@@ -20,8 +20,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "image_320x240_argb8888.h"
-#include "life_augmented_argb8888.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -59,11 +57,6 @@ OTM8009A_Object_t *pObj;
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static int32_t pending_buffer = -1;
-static uint32_t ImageIndex = 0;
-static const uint32_t *Images[] = {
-    image_320x240_argb8888,
-    life_augmented_argb8888,
-};
 
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);

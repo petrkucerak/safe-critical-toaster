@@ -135,6 +135,11 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Drivers/BSP/STM32H747I-DISCO/stm32h747i_discovery_bus.c</locationURI>
 		</link>
 		<link>
+			<name>Example/User/CM4/core_communication.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Common/Src/core_communication.c</locationURI>
+		</link>
+		<link>
 			<name>Example/User/CM4/main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/CM4/Src/main.c</locationURI>

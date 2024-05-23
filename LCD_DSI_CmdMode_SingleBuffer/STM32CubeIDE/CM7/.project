@@ -215,6 +215,11 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Drivers/BSP/STM32H747I-DISCO/stm32h747i_discovery_ts.c</locationURI>
 		</link>
 		<link>
+			<name>Example/User/CM7/core_communication.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Common/Src/core_communication.c</locationURI>
+		</link>
+		<link>
 			<name>Example/User/CM7/main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/CM7/Src/main.c</locationURI>

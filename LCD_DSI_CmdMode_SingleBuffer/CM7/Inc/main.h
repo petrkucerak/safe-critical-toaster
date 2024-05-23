@@ -23,6 +23,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal.h"
 
+#include "cores_communication.h"
 #include "stm32_lcd.h"
 #include "stm32h747i_discovery.h"
 #include "stm32h747i_discovery_bus.h"

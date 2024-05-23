@@ -40,17 +40,29 @@ _estack = 0x20020000;    /* end of RAM */
 _Min_Heap_Size = 0x200 ;      /* required amount of heap  */
 _Min_Stack_Size = 0x400 ; /* required amount of stack */
 
+RAM_D3_SIZE = 64K;
+
 /* Specify the memory areas */
 MEMORY
 {
 FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 1024K
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 128K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
+RAM_D3 (xrw)	: ORIGIN = 0x38000000, LENGTH = RAM_D3_SIZE
 }
 
 /* Define output sections */
 SECTIONS
 {
+   /* Shared memory */
+   .shared :
+   {
+     _sshared = .;
+     *(.shared);
+     _eshared = .;
+   } > RAM_D3
+   ASSERT((_eshared - _sshared) <= RAM_D3_SIZE, "RAM D3 too big")
+   
   /* The startup code goes first into FLASH */
   .isr_vector :
   {

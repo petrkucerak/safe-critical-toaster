@@ -160,6 +160,16 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_fmc.c</locationURI>
 		</link>
 		<link>
+			<name>Drivers/BSP/Components/ft6x06.c</name>
+			<type>1</type>
+			<location>C:/Users/Petr.Kucera/Documents/safe-critical-toaster/LCD_DSI_CmdMode_SingleBuffer/Drivers/BSP/Components/ft6x06/ft6x06.c</location>
+		</link>
+		<link>
+			<name>Drivers/BSP/Components/ft6x06_reg.c</name>
+			<type>1</type>
+			<location>C:/Users/Petr.Kucera/Documents/safe-critical-toaster/LCD_DSI_CmdMode_SingleBuffer/Drivers/BSP/Components/ft6x06/ft6x06_reg.c</location>
+		</link>
+		<link>
 			<name>Drivers/BSP/Components/is42s32800j.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Drivers/BSP/Components/is42s32800j/is42s32800j.c</locationURI>
@@ -193,6 +203,11 @@
 			<name>Drivers/BSP/STM32H747I_DISCO/stm32h747i_discovery_sdram.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Drivers/BSP/STM32H747I-DISCO/stm32h747i_discovery_sdram.c</locationURI>
+		</link>
+		<link>
+			<name>Drivers/BSP/STM32H747I_DISCO/stm32h747i_discovery_ts.c</name>
+			<type>1</type>
+			<location>C:/Users/Petr.Kucera/Documents/safe-critical-toaster/LCD_DSI_CmdMode_SingleBuffer/Drivers/BSP/STM32H747I-DISCO/stm32h747i_discovery_ts.c</location>
 		</link>
 		<link>
 			<name>Example/User/CM7/main.c</name>

@@ -21,6 +21,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include <stdio.h>
+#include <stm32h747i_discovery_ts.h>
+#include <stm32h7xx_hal_dsi.h>
+#include <stm32h7xx_hal_ltdc.h>
 #include <string.h>
 
 /** @addtogroup STM32H7xx_HAL_Examples
@@ -52,6 +55,9 @@ OTM8009A_Object_t *pObj;
 #define HFP 1
 #define HACT 800
 
+#define TS_ACCURACY 2
+#define TS_INSTANCE 0
+
 #define LAYER0_ADDRESS (LCD_FB_START_ADDRESS)
 
 /* Private macro -------------------------------------------------------------*/
@@ -61,6 +67,8 @@ static int32_t pending_buffer = -1;
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 static void Error_Handler(void);
+
+/* LCD screen functions */
 static void CopyBuffer(uint32_t *pSrc, uint32_t *pDst, uint16_t x, uint16_t y,
                        uint16_t xsize, uint16_t ysize);
 static uint8_t LCD_Init(void);
@@ -74,9 +82,12 @@ static int32_t DSI_IO_Read(uint16_t ChannelNbr, uint16_t Reg, uint8_t *pData,
 int32_t LCD_GetXSize(uint32_t Instance, uint32_t *XSize);
 int32_t LCD_GetYSize(uint32_t Instance, uint32_t *YSize);
 void LCD_MspInit(void);
-
 static void LCD_BriefDisplay(void);
 static void LCD_MainDisplay(void);
+
+/* TouchScreen functions */
+int32_t TS_Init(void);
+
 static void CPU_CACHE_Enable(void);
 static void MPU_Config(void);
 
@@ -151,6 +162,11 @@ int main(void)
 
    /* Enable DSI Wrapper so DSI IP will drive the LTDC */
    __HAL_DSI_WRAPPER_ENABLE(&hlcd_dsi);
+
+   /* Init Touch Screen */
+   if (TS_Init() != BSP_ERROR_NONE) {
+      Error_Handler();
+   }
 
    /* Clear display */
    UTIL_LCD_Clear(UTIL_LCD_COLOR_BLACK);
@@ -525,13 +541,30 @@ static void LCD_MainDisplay(void)
    UTIL_LCD_SetFont(&FontAvenirNext20);
    UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_WHITE);
    UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_BLACK);
-   UTIL_LCD_DisplayStringAtLine(17, (uint8_t *)"     MANUALLY START          SETUP TIMER");
+   UTIL_LCD_DisplayStringAtLine(
+       17, (uint8_t *)"     MANUALLY START          SETUP TIMER");
 
    UTIL_LCD_SetFont(&Font16);
    UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_WHITE);
    UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_BLACK);
    UTIL_LCD_DisplayStringAtLine(26, (uint8_t *)"  Stopped");
    UTIL_LCD_FillRect(20, 440, 760, 20, UTIL_LCD_COLOR_RED);
+}
+
+int32_t TS_Init(void)
+{
+   /* TS_Init */
+   TS_Init_t TS_InitStruct;
+   TS_InitStruct.Width = TS_MAX_WIDTH;
+   TS_InitStruct.Height = TS_MAX_HEIGHT;
+   TS_InitStruct.Orientation = TS_SWAP_NONE;
+   TS_InitStruct.Accuracy = TS_ACCURACY;
+
+   int32_t ret = BSP_TS_EnableIT(TS_INSTANCE);
+   if (ret != BSP_ERROR_NONE)
+      return ret;
+
+   return BSP_TS_Init(TS_INSTANCE, &TS_InitStruct);
 }
 
 /**

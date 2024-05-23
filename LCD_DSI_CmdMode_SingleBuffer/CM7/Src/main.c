@@ -142,10 +142,10 @@ int main(void)
    /* Initialize the SDRAM */
    BSP_SDRAM_Init(0);
 
-  //  /* Init Touch Screen */
-  //  if (TS_Init() != BSP_ERROR_NONE) {
-  //     Error_Handler();
-  //  }
+   /* Init Touch Screen */
+   if (TS_Init() != BSP_ERROR_NONE) {
+      Error_Handler();
+   }
 
    /* Initialize the LCD   */
    if (LCD_Init() != BSP_ERROR_NONE) {
@@ -560,11 +560,12 @@ int32_t TS_Init(void)
    TS_InitStruct.Orientation = TS_SWAP_NONE;
    TS_InitStruct.Accuracy = TS_ACCURACY;
 
-   int32_t ret = BSP_TS_EnableIT(TS_INSTANCE);
+   int32_t ret = BSP_TS_Init(TS_INSTANCE, &TS_InitStruct);
+   ret = ret;
    if (ret != BSP_ERROR_NONE)
       return ret;
 
-   return BSP_TS_Init(TS_INSTANCE, &TS_InitStruct);
+   return BSP_TS_EnableIT(TS_INSTANCE);
 }
 
 /**

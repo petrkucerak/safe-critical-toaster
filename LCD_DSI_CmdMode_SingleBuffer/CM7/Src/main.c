@@ -118,8 +118,8 @@ int32_t LCD_GetXSize(uint32_t Instance, uint32_t *XSize);
 int32_t LCD_GetYSize(uint32_t Instance, uint32_t *YSize);
 void LCD_MspInit(void);
 static void LCD_BriefDisplay(void);
+
 /* Display functions */
-static void LCD_Display_SetFrontScreen(void);
 static void LCD_Display_SetStatus(uint8_t *ptr);
 static void LCD_Display_ProgressBar(uint16_t progress, uint32_t color);
 static void LCD_Display_SetTitle(uint8_t *ptr);
@@ -227,9 +227,6 @@ int main(void)
 
    /* Clear display */
    UTIL_LCD_Clear(APP_COLOR_BACKGROUND);
-
-   /* Display example brief   */
-   // LCD_Display_SetFrontScreen();
 
    /*Refresh the LCD display*/
    HAL_DSI_Refresh(&hlcd_dsi);
@@ -610,29 +607,6 @@ static void LCD_BriefDisplay(void)
    UTIL_LCD_DisplayStringAtLine(5, (uint8_t *)"for display and for draw     ");
 }
 
-static void LCD_Display_SetFrontScreen(void)
-{
-   UTIL_LCD_SetFont(&FontMenlo32);
-   UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
-   UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_BLACK);
-   UTIL_LCD_DisplayStringAtLine(2, (uint8_t *)"           TOUSTER CONTROLLER");
-
-   UTIL_LCD_FillCircle(200, 220, 90, UTIL_LCD_COLOR_CUSTOM_Blue);
-   UTIL_LCD_FillCircle(600, 220, 90, UTIL_LCD_COLOR_CUSTOM_Blue);
-
-   UTIL_LCD_SetFont(&FontAvenirNext20);
-   UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
-   UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_BLACK);
-   UTIL_LCD_DisplayStringAtLine(
-       17, (uint8_t *)"     MANUALLY START          SETUP TIMER");
-
-   UTIL_LCD_SetFont(&Font16);
-   UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
-   UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_BLACK);
-   UTIL_LCD_DisplayStringAtLine(26, (uint8_t *)"  Stopped                    ");
-   UTIL_LCD_FillRect(20, 440, 760, 20, UTIL_LCD_COLOR_RED);
-}
-
 static void LCD_Display_SetStatus(uint8_t *ptr)
 {
    UTIL_LCD_SetFont(&Font16);
@@ -803,7 +777,7 @@ static void TO_WAITING_SCENE(App_t *app)
    app->button_right_type = PUSH_BUTTON;
    app->status_color = APP_COLOR_YELLOW;
    app->timer = app->config_timer;
-   sprintf(app->status_message, "  Delayed start in %d min",
+   sprintf(app->status_message, "  Start in %d min",
            app->timer / (60 * SECOND));
    APP_StartTimer(app);
 }
@@ -862,7 +836,13 @@ static void APP_UpdateScene(App_t *app)
 
    /* Update title */
    LCD_Display_SetTitle(app->title);
+
    /* Update status message */
+   if (app->scene == WAITING_SCENE) {
+      sprintf(app->status_message,
+              "  Start in %d min                          ",
+              app->timer_left / (60 * SECOND));
+   }
    LCD_Display_SetStatus(app->status_message);
    /* Update progress bar*/
    if (app->timer == 0)

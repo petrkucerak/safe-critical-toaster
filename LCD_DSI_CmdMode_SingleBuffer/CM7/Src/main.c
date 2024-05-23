@@ -677,10 +677,10 @@ static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
    if (TS_State->TouchDetected != 0U) {
       if (APP_HandleTouch_IsInInterval(TS_State, 320, 160, 283, 125)) {
          /* Detect left button push */
-         app->_delay = 1;
          switch (app->scene) {
             /* PUSH MANUALLY START button -> Set up MANUALLY_SCENE */
          case FRONT_SCREEN:
+            app->_delay = 1;
             app->scene = MANUALLY_SCENE;
             app->button_left_color = APP_COLOR_RED;
             sprintf(app->status_message, "  Started manually             ");
@@ -688,6 +688,7 @@ static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
             break;
             /* PUSH MANUALLY STOP button -> Set up FRONT_SCREEN */
          case MANUALLY_SCENE:
+            app->_delay = 1;
             app->scene = FRONT_SCREEN;
             app->button_left_color = APP_COLOR_BLUE;
             sprintf(app->status_message, "  Stopped             ");
@@ -696,7 +697,6 @@ static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
          }
 
       } else if (APP_HandleTouch_IsInInterval(TS_State, 320, 160, 670, 539)) {
-         app->_delay = 1;
          /* Detect right button push */
          sprintf(app->status_message, "  Right button pushed!            ");
          if (app->scene == FRONT_SCREEN)

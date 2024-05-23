@@ -46,7 +46,7 @@ OTM8009A_Object_t *pObj;
 
 typedef enum {
    FRONT_SCREEN,
-   MANUALLY_SCENE,
+   TURNON_SCENE,
    TIMER_CONFIG_SCENE,
    WAITING_SCENE
 } Scene_t;
@@ -136,9 +136,10 @@ uint8_t APP_HandleTouch_IsInInterval(TS_State_t *s, uint32_t x_max,
                                      uint32_t y_min);
 static void APP_StartTimer(App_t *app);
 static void APP_UpdateTimer(App_t *app);
+static void APP_TurnPeripheries(App_t *app);
 
 static void TO_FRONT_SCENE(App_t *app);
-static void TO_MANUALLY_SCENE(App_t *app);
+static void TO_TURNON_SCENE(App_t *app);
 static void TO_TIMER_CONFIG_SCENE(App_t *app);
 static void TO_WAITING_SCENE(App_t *app);
 
@@ -170,7 +171,7 @@ int main(void)
    MPU_Config();
 
    /* Enable the CPU Cache */
-   CPU_CACHE_Enable();
+   // CPU_CACHE_Enable();
 
    /* STM32H7xx HAL library initialization:
     - Systick timer is configured by default as source of time base, but user
@@ -192,6 +193,7 @@ int main(void)
 
    /* Initialize used Leds */
    BSP_LED_Init(LED3);
+   BSP_LED_Init(LED4);
 
    /* Initialize the SDRAM */
    BSP_SDRAM_Init(0);
@@ -256,6 +258,9 @@ int main(void)
 
       /* Render display by app struct */
       APP_UpdateScene(&app);
+
+      /* Turn on toaster, in testing mode I used LED */
+      APP_TurnPeripheries(&app);
    }
 }
 /**
@@ -699,7 +704,7 @@ static void LCD_Display_ButtonTitles(App_t *app)
       UTIL_LCD_DisplayStringAtLine(
           17, (uint8_t *)"     MANUALLY START          SETUP TIMER           ");
       break;
-   case MANUALLY_SCENE:
+   case TURNON_SCENE:
       UTIL_LCD_DisplayStringAtLine(
           17, (uint8_t *)"     MANUALLY STOP                                 ");
       break;
@@ -761,7 +766,7 @@ static void APP_UpdateTimer(App_t *app)
          app->timer_left = app->timer - (now - app->timer_start_time);
       else {
          if (app->scene == WAITING_SCENE)
-            TO_MANUALLY_SCENE(app);
+            TO_TURNON_SCENE(app);
          else
             TO_FRONT_SCENE(app);
       }
@@ -793,10 +798,10 @@ static void TO_FRONT_SCENE(App_t *app)
  *
  * @param app
  */
-static void TO_MANUALLY_SCENE(App_t *app)
+static void TO_TURNON_SCENE(App_t *app)
 {
    app->_delay = 1;
-   app->scene = MANUALLY_SCENE;
+   app->scene = TURNON_SCENE;
    app->button_left_color = APP_COLOR_RED;
    app->button_left_type = PUSH_BUTTON;
    app->button_right_type = NONE;
@@ -867,12 +872,12 @@ static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
       if (APP_HandleTouch_IsInInterval(TS_State, 320, 160, 283, 125)) {
          /* Detect left button push */
          switch (app->scene) {
-            /* PUSH MANUALLY START button -> Set up MANUALLY_SCENE */
+            /* PUSH MANUALLY START button -> Set up TURNON_SCENE */
          case FRONT_SCREEN:
-            TO_MANUALLY_SCENE(app);
+            TO_TURNON_SCENE(app);
             break;
             /* PUSH MANUALLY STOP button -> Set up FRONT_SCREEN */
-         case MANUALLY_SCENE:
+         case TURNON_SCENE:
             TO_FRONT_SCENE(app);
             break;
          case WAITING_SCENE:
@@ -889,7 +894,7 @@ static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
             TO_WAITING_SCENE(app);
             break;
          case WAITING_SCENE:
-            TO_MANUALLY_SCENE(app);
+            TO_TURNON_SCENE(app);
             break;
          }
       }
@@ -934,6 +939,25 @@ static void APP_UpdateScene(App_t *app)
    if (app->_delay) {
       HAL_Delay(800);
       app->_delay = 0;
+   }
+}
+
+/**
+ * @brief On TURNON_SCENE turn on LED4 and send message trough shared memory to
+ * M4 CPU.
+ *
+ * @param app
+ */
+static void APP_TurnPeripheries(App_t *app)
+{
+   if (app->scene == TURNON_SCENE) {
+      const int buff[] = {1, 1};
+      BSP_LED_On(LED4);
+      put_to_m4(&buff, 2);
+   } else {
+      const int buff[] = {1, 0};
+      BSP_LED_Off(LED4);
+      put_to_m4(&buff, 2);
    }
 }
 

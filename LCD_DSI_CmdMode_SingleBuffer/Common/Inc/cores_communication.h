@@ -45,7 +45,7 @@ void core_share_init(void);
  * @brief Send data from M7 to M4
  * @param buffer
  * @param size
- * @return -1 if lock is not acquired, otherwise how many items were transfered
+ * @return -1 if lock is not acquired, otherwise how many items were transferred
  */
 int put_to_m4(const int *const restrict buffer, const unsigned int size);
 
@@ -61,7 +61,7 @@ int get_from_m4(int *const restrict buffer, unsigned int size);
  * @brief Send data from M4 to M7
  * @param buffer
  * @param size
- * @return -1 if lock is not acquired, otherwise how many items were transfered
+ * @return -1 if lock is not acquired, otherwise how many items were transferred
  */
 int put_to_m7(const int *const restrict buffer, const unsigned int size);
 

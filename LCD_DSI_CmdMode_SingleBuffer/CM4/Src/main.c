@@ -18,6 +18,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <inttypes.h>
+#include <stdio.h>
 
 /** @addtogroup STM32H7xx_HAL_Examples
  * @{
@@ -35,6 +37,7 @@
 /* Private function prototypes -----------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
+static void CoreCommunication(void);
 
 /**
  * @brief  Main program
@@ -72,12 +75,36 @@ int main(void)
        */
    HAL_Init();
 
+   BSP_LED_Init(LED1);
+   BSP_LED_Init(LED2);
+
    /* Create share memory */
    core_share_init();
 
    /* Infinite loop */
    while (1) {
+
+      CoreCommunication();
+      BSP_LED_On(LED1);
+      HAL_Delay(1000);
+      CoreCommunication();
+      BSP_LED_Off(LED1);
+      HAL_Delay(1000);
    }
+}
+
+/**
+ * @brief Turn the light on on M7 request
+ *
+ */
+static void CoreCommunication(void)
+{
+   int buff[] = {0, 0};
+   unsigned int size = get_from_m7(&buff, 2);
+   if (buff[1] == 1)
+      BSP_LED_On(LED2);
+   else
+      BSP_LED_Off(LED2);
 }
 
 #ifdef USE_FULL_ASSERT

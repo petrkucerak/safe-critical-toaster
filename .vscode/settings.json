@@ -62,6 +62,7 @@
     "stm32_lcd.h": "c",
     "cores_communication.h": "c",
     "stm32h747i_discovery_lcd.h": "c",
-    "stm32h7xx_hal.h": "c"
+    "stm32h7xx_hal.h": "c",
+    "atomic": "c"
   }
 }

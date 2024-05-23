@@ -739,7 +739,8 @@ static void TO_FRONT_SCENE(App_t *app)
    app->button_left_type = PUSH_BUTTON;
    app->button_right_color = APP_COLOR_YELLOW;
    app->button_right_type = PUSH_BUTTON;
-   sprintf(app->status_message, "  Toaster is stopped                         ");
+   sprintf(app->status_message,
+           "  Toaster is stopped                         ");
    app->status_color = APP_COLOR_RED;
 
    app->timer = 0;

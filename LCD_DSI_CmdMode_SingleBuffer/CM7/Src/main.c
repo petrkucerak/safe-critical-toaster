@@ -653,6 +653,7 @@ static void LCD_Display_ProgressBar(uint16_t progress, uint32_t color)
 {
    /* Clean space */
    UTIL_LCD_FillRect(00, 440, 800, 20, APP_COLOR_BACKGROUND);
+   UTIL_LCD_FillRect(19, 439, 762, 22, APP_COLOR_TEXT);
    UTIL_LCD_FillRect(20, 440, (uint32_t)(progress * 7.60), 20, color);
 }
 

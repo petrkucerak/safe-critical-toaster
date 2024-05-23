@@ -142,6 +142,11 @@ int main(void)
    /* Initialize the SDRAM */
    BSP_SDRAM_Init(0);
 
+  //  /* Init Touch Screen */
+  //  if (TS_Init() != BSP_ERROR_NONE) {
+  //     Error_Handler();
+  //  }
+
    /* Initialize the LCD   */
    if (LCD_Init() != BSP_ERROR_NONE) {
       Error_Handler();
@@ -162,11 +167,6 @@ int main(void)
 
    /* Enable DSI Wrapper so DSI IP will drive the LTDC */
    __HAL_DSI_WRAPPER_ENABLE(&hlcd_dsi);
-
-   /* Init Touch Screen */
-   if (TS_Init() != BSP_ERROR_NONE) {
-      Error_Handler();
-   }
 
    /* Clear display */
    UTIL_LCD_Clear(UTIL_LCD_COLOR_BLACK);

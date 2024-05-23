@@ -57,11 +57,13 @@ typedef struct {
    uint16_t progress_bar;
    uint32_t timer;
    uint32_t timer_left;
+   uint32_t timer_start_time;
    uint32_t button_left_color;
    Button_type_t button_left_type;
    uint32_t button_right_color;
    Button_type_t button_right_type;
 } App_t;
+
 /* Private define ------------------------------------------------------------*/
 
 #define VSYNC 1
@@ -75,6 +77,8 @@ typedef struct {
 
 #define TS_ACCURACY 2
 #define TS_INSTANCE 0
+
+#define SECOND 1000
 
 #define APP_COLOR_BACKGROUND UTIL_LCD_COLOR_BLACK
 #define APP_COLOR_RED UTIL_LCD_COLOR_RED
@@ -125,6 +129,11 @@ static void APP_UpdateScene(App_t *app);
 uint8_t APP_HandleTouch_IsInInterval(TS_State_t *s, uint32_t x_max,
                                      uint32_t x_min, uint32_t y_max,
                                      uint32_t y_min);
+static void APP_StartTimer(App_t *app);
+static void APP_UpdateTimer(App_t *app);
+
+static void TO_FRONT_SCENE(App_t *app);
+static void TO_MANUALLY_SCENE(App_t *app);
 
 static void CPU_CACHE_Enable(void);
 static void MPU_Config(void);
@@ -218,11 +227,11 @@ int main(void)
    /* Create App struct */
    App_t app;
    app.progress_bar = 100;
+   app.timer = 0;
    app.scene = FRONT_SCREEN;
    sprintf(app.status_message, "  Stopped");
    sprintf(app.title, "           TOUSTER CONTROLLER");
    app.status_color = APP_COLOR_RED;
-   app.progress_bar = 100;
    app.button_left_color = APP_COLOR_BLUE;
    app.button_left_type = PUSH_BUTTON;
    app.button_right_color = APP_COLOR_BLUE;
@@ -237,6 +246,9 @@ int main(void)
       BSP_TS_GetState(TS_INSTANCE, &TS_State);
       /* Handel touch && Update app struct */
       APP_HandleTouch(&TS_State, &app);
+
+      /* Update timer */
+      APP_UpdateTimer(&app);
       /* Render display by app struct */
       APP_UpdateScene(&app);
 
@@ -672,6 +684,46 @@ uint8_t APP_HandleTouch_IsInInterval(TS_State_t *s, uint32_t x_max,
       return 0;
 }
 
+static void APP_StartTimer(App_t *app)
+{
+   app->timer_left = app->timer;
+   app->timer_start_time = HAL_GetTick();
+}
+
+static void APP_UpdateTimer(App_t *app)
+{
+   if (app->timer != 0) {
+      uint32_t now = HAL_GetTick();
+      if (app->timer > now - app->timer_start_time)
+         app->timer_left = app->timer - (now - app->timer_start_time);
+      else
+         TO_FRONT_SCENE(app);
+   }
+}
+
+static void TO_FRONT_SCENE(App_t *app)
+{
+   app->_delay = 1;
+   app->scene = FRONT_SCREEN;
+   app->button_left_color = APP_COLOR_BLUE;
+   sprintf(app->status_message, "  Stopped             ");
+   app->status_color = APP_COLOR_RED;
+
+   app->timer = 0;
+}
+static void TO_MANUALLY_SCENE(App_t *app)
+{
+   app->_delay = 1;
+   app->scene = MANUALLY_SCENE;
+   app->button_left_color = APP_COLOR_RED;
+   sprintf(app->status_message, "  Started manually             ");
+   app->status_color = APP_COLOR_GREEN;
+
+   /* Set up timer */
+   app->timer = 1 * 60 * SECOND; // 1 min
+   APP_StartTimer(app);
+}
+
 static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
 {
    if (TS_State->TouchDetected != 0U) {
@@ -680,19 +732,11 @@ static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
          switch (app->scene) {
             /* PUSH MANUALLY START button -> Set up MANUALLY_SCENE */
          case FRONT_SCREEN:
-            app->_delay = 1;
-            app->scene = MANUALLY_SCENE;
-            app->button_left_color = APP_COLOR_RED;
-            sprintf(app->status_message, "  Started manually             ");
-            app->status_color = APP_COLOR_GREEN;
+            TO_MANUALLY_SCENE(app);
             break;
             /* PUSH MANUALLY STOP button -> Set up FRONT_SCREEN */
          case MANUALLY_SCENE:
-            app->_delay = 1;
-            app->scene = FRONT_SCREEN;
-            app->button_left_color = APP_COLOR_BLUE;
-            sprintf(app->status_message, "  Stopped             ");
-            app->status_color = APP_COLOR_RED;
+            TO_FRONT_SCENE(app);
             break;
          }
 
@@ -721,13 +765,17 @@ static void APP_UpdateScene(App_t *app)
    /* Update status message */
    LCD_Display_SetStatus(app->status_message);
    /* Update progress bar*/
+   if (app->timer == 0)
+      app->progress_bar = 100;
+   else
+      app->progress_bar = (uint16_t)((100 * app->timer_left) / app->timer);
    LCD_Display_ProgressBar(app->progress_bar, app->status_color);
 
    /*Refresh the LCD display*/
    HAL_Delay(10);
    HAL_DSI_Refresh(&hlcd_dsi);
    if (app->_delay) {
-      HAL_Delay(1000);
+      HAL_Delay(800);
       app->_delay = 0;
    }
 }

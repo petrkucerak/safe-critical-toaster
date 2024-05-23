@@ -253,6 +253,7 @@ int main(void)
 
       /* Update timer */
       APP_UpdateTimer(&app);
+
       /* Render display by app struct */
       APP_UpdateScene(&app);
 
@@ -771,6 +772,15 @@ static void TO_TIMER_CONFIG_SCENE(App_t *app)
 static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
 {
    if (TS_State->TouchDetected != 0U) {
+
+      /* Handle config timer time */
+      if (app->scene == TIMER_CONFIG_SCENE) {
+         if (APP_HandleTouch_IsInInterval(TS_State, 450, 250, 300, 80))
+            app->config_timer += SECOND;
+         else if (APP_HandleTouch_IsInInterval(TS_State, 210, 20, 300, 80))
+            app->config_timer -= SECOND;
+      }
+
       if (APP_HandleTouch_IsInInterval(TS_State, 320, 160, 283, 125)) {
          /* Detect left button push */
          switch (app->scene) {
@@ -783,7 +793,6 @@ static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
             TO_FRONT_SCENE(app);
             break;
          }
-
       } else if (APP_HandleTouch_IsInInterval(TS_State, 320, 160, 670, 539)) {
          /* Detect right button push */
          switch (app->scene) {
@@ -816,7 +825,7 @@ static void APP_UpdateScene(App_t *app)
    LCD_Display_ProgressBar(app->progress_bar, app->status_color);
 
    /*Refresh the LCD display*/
-   HAL_Delay(10);
+   // HAL_Delay(10);
    HAL_DSI_Refresh(&hlcd_dsi);
    if (app->_delay) {
       HAL_Delay(800);
@@ -897,13 +906,11 @@ static void CopyBuffer(uint32_t *pSrc, uint32_t *pDst, uint16_t x, uint16_t y,
  *         The system Clock is configured as follow :
  *            System Clock source            = PLL (HSE)
  *            SYSCLK(Hz)                     = 400000000 (CM7 CPU Clock)
- *            HCLK(Hz)                       = 200000000 (CM4 CPU, AXI and AHBs
- * Clock) AHB Prescaler                  = 2 D1 APB3 Prescaler              = 2
- * (APB3 Clock  100MHz) D2 APB1 Prescaler              = 2 (APB1 Clock  100MHz)
- *            D2 APB2 Prescaler              = 2 (APB2 Clock  100MHz)
- *            D3 APB4 Prescaler              = 2 (APB4 Clock  100MHz)
- *            HSE Frequency(Hz)              = 25000000
- *            PLL_M                          = 5
+ *            HCLK(Hz)                       = 200000000 (CM4 CPU, AXI and
+ * AHBs Clock) AHB Prescaler                  = 2 D1 APB3 Prescaler = 2 (APB3
+ * Clock  100MHz) D2 APB1 Prescaler              = 2 (APB1 Clock  100MHz) D2
+ * APB2 Prescaler              = 2 (APB2 Clock  100MHz) D3 APB4 Prescaler = 2
+ * (APB4 Clock  100MHz) HSE Frequency(Hz)              = 25000000 PLL_M = 5
  *            PLL_N                          = 160
  *            PLL_P                          = 2
  *            PLL_Q                          = 4
@@ -923,8 +930,9 @@ static void SystemClock_Config(void)
    HAL_PWREx_ConfigSupply(PWR_DIRECT_SMPS_SUPPLY);
 
    /* The voltage scaling allows optimizing the power consumption when the
-    device is clocked below the maximum system frequency, to update the voltage
-    scaling value regarding system frequency refer to product datasheet.  */
+    device is clocked below the maximum system frequency, to update the
+    voltage scaling value regarding system frequency refer to product
+    datasheet.  */
    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
    while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {
@@ -1077,8 +1085,8 @@ static void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
    /* User can add his own implementation to report the file name and line
-      number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
-      line) */
+      number, ex: printf("Wrong parameters value: file %s on line %d\r\n",
+      file, line) */
 
    /* Infinite loop */
    while (1) {

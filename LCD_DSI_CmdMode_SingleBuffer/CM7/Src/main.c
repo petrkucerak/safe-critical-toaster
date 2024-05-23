@@ -86,12 +86,13 @@ typedef struct {
 
 #define SECOND 1000
 
-#define APP_COLOR_BACKGROUND UTIL_LCD_COLOR_BLACK
+#define APP_COLOR_BACKGROUND UTIL_LCD_COLOR_CUSTOM_Stone
 #define APP_COLOR_RED UTIL_LCD_COLOR_RED
 #define APP_COLOR_BLUE UTIL_LCD_COLOR_CUSTOM_Blue
 #define APP_COLOR_TEXT UTIL_LCD_COLOR_WHITE
 #define APP_COLOR_GREEN UTIL_LCD_COLOR_DARKGREEN
 #define APP_COLOR_YELLOW UTIL_LCD_COLOR_CUSTOM_Yellow
+#define APP_COLOR_STONE UTIL_LCD_COLOR_BLACK
 
 #define LAYER0_ADDRESS (LCD_FB_START_ADDRESS)
 
@@ -237,11 +238,11 @@ int main(void)
    app.timer = 0;
    app.scene = FRONT_SCREEN;
    sprintf(app.status_message, "  Stopped");
-   sprintf(app.title, "           TOUSTER CONTROLLER");
+   sprintf(app.title, "            ~ TOUSTER CONTROLLER ~");
    app.status_color = APP_COLOR_RED;
-   app.button_left_color = APP_COLOR_BLUE;
+   app.button_left_color = APP_COLOR_GREEN;
    app.button_left_type = PUSH_BUTTON;
-   app.button_right_color = APP_COLOR_BLUE;
+   app.button_right_color = APP_COLOR_YELLOW;
    app.button_right_type = PUSH_BUTTON;
    app._delay = 0;
 
@@ -617,10 +618,12 @@ static void LCD_Display_SetStatus(uint8_t *ptr)
 
 static void LCD_Display_SetTitle(uint8_t *ptr)
 {
-   UTIL_LCD_SetFont(&FontMenlo32);
+   UTIL_LCD_FillRect(0, 0, 800, 75, APP_COLOR_STONE);
+   UTIL_LCD_SetFont(&FontAvenirNext20);
    UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
-   UTIL_LCD_SetBackColor(APP_COLOR_BACKGROUND);
-   UTIL_LCD_DisplayStringAtLine(2, ptr);
+   UTIL_LCD_SetBackColor(APP_COLOR_STONE);
+   UTIL_LCD_DisplayStringAtLine(1, ptr);
+   // UTIL_LCD_FillRect(170, 80, 460, 1, APP_COLOR_TEXT);
 }
 
 static void LCD_Display_ProgressBar(uint16_t progress, uint32_t color)
@@ -732,11 +735,11 @@ static void TO_FRONT_SCENE(App_t *app)
 {
    app->_delay = 1;
    app->scene = FRONT_SCREEN;
-   app->button_left_color = APP_COLOR_BLUE;
+   app->button_left_color = APP_COLOR_GREEN;
    app->button_left_type = PUSH_BUTTON;
-   app->button_right_color = APP_COLOR_BLUE;
+   app->button_right_color = APP_COLOR_YELLOW;
    app->button_right_type = PUSH_BUTTON;
-   sprintf(app->status_message, "  Stopped                                   ");
+   sprintf(app->status_message, "  Toaster is stopped                         ");
    app->status_color = APP_COLOR_RED;
 
    app->timer = 0;

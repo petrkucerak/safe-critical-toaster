@@ -83,7 +83,9 @@ int32_t LCD_GetXSize(uint32_t Instance, uint32_t *XSize);
 int32_t LCD_GetYSize(uint32_t Instance, uint32_t *YSize);
 void LCD_MspInit(void);
 static void LCD_BriefDisplay(void);
-static void LCD_MainDisplay(void);
+/* Display functions */
+static void LCD_Display_SetFrontScreen(void);
+static void LCD_Display_SetStatus(uint8_t *ptr);
 
 /* TouchScreen functions */
 int32_t TS_Init(void);
@@ -138,6 +140,8 @@ int main(void)
 
    /* Initialize used Leds */
    BSP_LED_Init(LED3);
+   BSP_LED_Init(LED2);
+   BSP_LED_Init(LED1);
 
    /* Initialize the SDRAM */
    BSP_SDRAM_Init(0);
@@ -172,7 +176,7 @@ int main(void)
    UTIL_LCD_Clear(UTIL_LCD_COLOR_BLACK);
 
    /* Display example brief   */
-   LCD_MainDisplay();
+   LCD_Display_SetFrontScreen();
 
    /*Refresh the LCD display*/
    HAL_DSI_Refresh(&hlcd_dsi);
@@ -180,8 +184,24 @@ int main(void)
    /* Infinite loop */
    while (1) {
 
-      /* Wait some time before switching to next image */
-      HAL_Delay(5000);
+      TS_State_t TS_State;
+      BSP_TS_GetState(TS_INSTANCE, &TS_State);
+
+      if (TS_State.TouchDetected != 0U) {
+         BSP_LED_On(LED1);
+         BSP_LED_Off(LED2);
+         LCD_Display_SetStatus(
+             (uint8_t *)"  Touch detected                        ");
+         HAL_DSI_Refresh(&hlcd_dsi);
+      } else {
+         BSP_LED_On(LED2);
+         BSP_LED_Off(LED1);
+         LCD_Display_SetStatus(
+             (uint8_t *)"  Touch not detected                    ");
+         HAL_DSI_Refresh(&hlcd_dsi);
+      }
+
+      // HAL_Delay(100);
    }
 }
 /**
@@ -528,7 +548,7 @@ static void LCD_BriefDisplay(void)
    UTIL_LCD_DisplayStringAtLine(5, (uint8_t *)"for display and for draw     ");
 }
 
-static void LCD_MainDisplay(void)
+static void LCD_Display_SetFrontScreen(void)
 {
    UTIL_LCD_SetFont(&FontMenlo32);
    UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_WHITE);
@@ -547,8 +567,16 @@ static void LCD_MainDisplay(void)
    UTIL_LCD_SetFont(&Font16);
    UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_WHITE);
    UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_BLACK);
-   UTIL_LCD_DisplayStringAtLine(26, (uint8_t *)"  Stopped");
+   UTIL_LCD_DisplayStringAtLine(26, (uint8_t *)"  Stopped                    ");
    UTIL_LCD_FillRect(20, 440, 760, 20, UTIL_LCD_COLOR_RED);
+}
+
+static void LCD_Display_SetStatus(uint8_t *ptr)
+{
+   UTIL_LCD_SetFont(&Font16);
+   UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_WHITE);
+   UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_BLACK);
+   UTIL_LCD_DisplayStringAtLine(26, ptr);
 }
 
 int32_t TS_Init(void)
@@ -561,11 +589,10 @@ int32_t TS_Init(void)
    TS_InitStruct.Accuracy = TS_ACCURACY;
 
    int32_t ret = BSP_TS_Init(TS_INSTANCE, &TS_InitStruct);
-   ret = ret;
    if (ret != BSP_ERROR_NONE)
       return ret;
-
-   return BSP_TS_EnableIT(TS_INSTANCE);
+   // ret = BSP_TS_EnableIT(TS_INSTANCE);
+   return ret;
 }
 
 /**

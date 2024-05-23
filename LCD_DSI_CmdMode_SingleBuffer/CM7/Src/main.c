@@ -765,7 +765,8 @@ static void TO_TIMER_CONFIG_SCENE(App_t *app)
    app->status_color = APP_COLOR_YELLOW;
    sprintf(app->status_message, "  Delay configuration          ");
 
-   app->config_timer = 17 * 60 * SECOND + 21 * SECOND; // default 17 min and 21 s
+   app->config_timer =
+       17 * 60 * SECOND + 21 * SECOND; // default 17 min and 21 s
 }
 static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
 {

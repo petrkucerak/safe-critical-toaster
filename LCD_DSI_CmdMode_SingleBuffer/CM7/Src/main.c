@@ -171,7 +171,7 @@ int main(void)
    MPU_Config();
 
    /* Enable the CPU Cache */
-   // CPU_CACHE_Enable();
+   // CPU_CACHE_Enable(); // ! FOR DUAL CORE COMMUN., CACHE SHOULD BE DISABLE
 
    /* STM32H7xx HAL library initialization:
     - Systick timer is configured by default as source of time base, but user

@@ -45,7 +45,12 @@ DSI_PLLInitTypeDef dsiPllInit;
 static RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
 OTM8009A_Object_t *pObj;
 
-typedef enum { FRONT_SCREEN, MANUALLY_SCENE, TIMER_CONFIG_SCENE } Scene_t;
+typedef enum {
+   FRONT_SCREEN,
+   MANUALLY_SCENE,
+   TIMER_CONFIG_SCENE,
+   WAITING_SCENE
+} Scene_t;
 typedef enum { PUSH_BUTTON, TIMER_BUTTON } Button_type_t;
 
 typedef struct {
@@ -138,6 +143,7 @@ static void APP_UpdateTimer(App_t *app);
 static void TO_FRONT_SCENE(App_t *app);
 static void TO_MANUALLY_SCENE(App_t *app);
 static void TO_TIMER_CONFIG_SCENE(App_t *app);
+static void TO_WAITING_SCENE(App_t *app);
 
 static void CPU_CACHE_Enable(void);
 static void MPU_Config(void);
@@ -671,9 +677,10 @@ static void LCD_Display_TimerButton(App_t *app)
 static void LCD_Display_LeftButton(App_t *app)
 {
    if (app->button_left_type == PUSH_BUTTON) {
+      UTIL_LCD_FillCircle(200, 220, 92, APP_COLOR_BACKGROUND);
       UTIL_LCD_FillCircle(200, 220, 90, app->button_left_color);
    } else if (app->button_left_type == TIMER_BUTTON) {
-      UTIL_LCD_FillCircle(200, 220, 90, APP_COLOR_BACKGROUND);
+      UTIL_LCD_FillCircle(200, 220, 92, APP_COLOR_BACKGROUND);
       LCD_Display_TimerButton(app);
    }
 }
@@ -681,7 +688,7 @@ static void LCD_Display_LeftButton(App_t *app)
 static void LCD_Display_RightButton(App_t *app)
 {
    if (app->button_right_type == PUSH_BUTTON) {
-      UTIL_LCD_FillCircle(600, 220, 90, app->button_right_color);
+      UTIL_LCD_FillCircle(600, 220, 92, app->button_right_color);
    }
 }
 
@@ -693,16 +700,20 @@ static void LCD_Display_ButtonTitles(App_t *app)
    switch (app->scene) {
    case FRONT_SCREEN:
       UTIL_LCD_DisplayStringAtLine(
-          17, (uint8_t *)"     MANUALLY START          SETUP TIMER");
+          17, (uint8_t *)"     MANUALLY START          SETUP TIMER           ");
       break;
    case MANUALLY_SCENE:
       UTIL_LCD_DisplayStringAtLine(
-          17, (uint8_t *)"     MANUALLY STOP           SETUP TIMER");
+          17, (uint8_t *)"     MANUALLY STOP                                 ");
       break;
 
    case TIMER_CONFIG_SCENE:
       UTIL_LCD_DisplayStringAtLine(
-          17, (uint8_t *)"                             START TIMER");
+          17, (uint8_t *)"                             START TIMER           ");
+      break;
+   case WAITING_SCENE:
+      UTIL_LCD_DisplayStringAtLine(
+          17, (uint8_t *)"      STOP TIMER            MANUALLY START         ");
       break;
    }
 }
@@ -730,8 +741,12 @@ static void APP_UpdateTimer(App_t *app)
       uint32_t now = HAL_GetTick();
       if (app->timer > now - app->timer_start_time)
          app->timer_left = app->timer - (now - app->timer_start_time);
-      else
-         TO_FRONT_SCENE(app);
+      else {
+         if (app->scene == WAITING_SCENE)
+            TO_MANUALLY_SCENE(app);
+         else
+            TO_FRONT_SCENE(app);
+      }
    }
 }
 
@@ -740,7 +755,10 @@ static void TO_FRONT_SCENE(App_t *app)
    app->_delay = 1;
    app->scene = FRONT_SCREEN;
    app->button_left_color = APP_COLOR_BLUE;
-   sprintf(app->status_message, "  Stopped             ");
+   app->button_left_type = PUSH_BUTTON;
+   app->button_right_color = APP_COLOR_BLUE;
+   app->button_right_type = PUSH_BUTTON;
+   sprintf(app->status_message, "  Stopped                                   ");
    app->status_color = APP_COLOR_RED;
 
    app->timer = 0;
@@ -750,7 +768,10 @@ static void TO_MANUALLY_SCENE(App_t *app)
    app->_delay = 1;
    app->scene = MANUALLY_SCENE;
    app->button_left_color = APP_COLOR_RED;
-   sprintf(app->status_message, "  Started manually             ");
+   app->button_left_type = PUSH_BUTTON;
+   app->button_right_color = APP_COLOR_BACKGROUND;
+   app->button_right_type = PUSH_BUTTON;
+   sprintf(app->status_message, "  Started manually                          ");
    app->status_color = APP_COLOR_GREEN;
 
    /* Set up timer */
@@ -764,10 +785,24 @@ static void TO_TIMER_CONFIG_SCENE(App_t *app)
    app->button_right_color = APP_COLOR_GREEN;
    app->button_left_type = TIMER_BUTTON;
    app->status_color = APP_COLOR_YELLOW;
-   sprintf(app->status_message, "  Delay configuration          ");
+   sprintf(app->status_message, "  Delay configuration                       ");
 
    app->config_timer =
        17 * 60 * SECOND + 21 * SECOND; // default 17 min and 21 s
+}
+static void TO_WAITING_SCENE(App_t *app)
+{
+   app->_delay = 1;
+   app->scene = WAITING_SCENE;
+   app->button_left_color = APP_COLOR_YELLOW;
+   app->button_left_type = PUSH_BUTTON;
+   app->button_right_color = APP_COLOR_GREEN;
+   app->button_right_type = PUSH_BUTTON;
+   app->status_color = APP_COLOR_YELLOW;
+   app->timer = app->config_timer;
+   sprintf(app->status_message, "  Delayed start in %d min",
+           app->timer / (60 * SECOND));
+   APP_StartTimer(app);
 }
 static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
 {
@@ -792,12 +827,21 @@ static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
          case MANUALLY_SCENE:
             TO_FRONT_SCENE(app);
             break;
+         case WAITING_SCENE:
+            TO_FRONT_SCENE(app);
+            break;
          }
       } else if (APP_HandleTouch_IsInInterval(TS_State, 320, 160, 670, 539)) {
          /* Detect right button push */
          switch (app->scene) {
          case FRONT_SCREEN:
             TO_TIMER_CONFIG_SCENE(app);
+            break;
+         case TIMER_CONFIG_SCENE:
+            TO_WAITING_SCENE(app);
+            break;
+         case WAITING_SCENE:
+            TO_MANUALLY_SCENE(app);
             break;
          }
       }

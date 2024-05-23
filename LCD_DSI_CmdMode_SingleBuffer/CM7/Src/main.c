@@ -51,7 +51,7 @@ typedef enum {
    TIMER_CONFIG_SCENE,
    WAITING_SCENE
 } Scene_t;
-typedef enum { PUSH_BUTTON, TIMER_BUTTON } Button_type_t;
+typedef enum { PUSH_BUTTON, TIMER_BUTTON, NONE } Button_type_t;
 
 typedef struct {
    Scene_t scene;
@@ -677,7 +677,7 @@ static void LCD_Display_TimerButton(App_t *app)
 static void LCD_Display_LeftButton(App_t *app)
 {
    if (app->button_left_type == PUSH_BUTTON) {
-      UTIL_LCD_FillCircle(200, 220, 92, APP_COLOR_BACKGROUND);
+      UTIL_LCD_FillCircle(200, 220, 92, APP_COLOR_TEXT);
       UTIL_LCD_FillCircle(200, 220, 90, app->button_left_color);
    } else if (app->button_left_type == TIMER_BUTTON) {
       UTIL_LCD_FillCircle(200, 220, 92, APP_COLOR_BACKGROUND);
@@ -688,7 +688,10 @@ static void LCD_Display_LeftButton(App_t *app)
 static void LCD_Display_RightButton(App_t *app)
 {
    if (app->button_right_type == PUSH_BUTTON) {
-      UTIL_LCD_FillCircle(600, 220, 92, app->button_right_color);
+      UTIL_LCD_FillCircle(600, 220, 92, APP_COLOR_TEXT);
+      UTIL_LCD_FillCircle(600, 220, 90, app->button_right_color);
+   } else if (app->button_right_type == NONE) {
+      UTIL_LCD_FillCircle(600, 220, 92, APP_COLOR_BACKGROUND);
    }
 }
 
@@ -769,8 +772,7 @@ static void TO_MANUALLY_SCENE(App_t *app)
    app->scene = MANUALLY_SCENE;
    app->button_left_color = APP_COLOR_RED;
    app->button_left_type = PUSH_BUTTON;
-   app->button_right_color = APP_COLOR_BACKGROUND;
-   app->button_right_type = PUSH_BUTTON;
+   app->button_right_type = NONE;
    sprintf(app->status_message, "  Started manually                          ");
    app->status_color = APP_COLOR_GREEN;
 

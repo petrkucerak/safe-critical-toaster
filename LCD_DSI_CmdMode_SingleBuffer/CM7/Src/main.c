@@ -44,6 +44,17 @@ DSI_LPCmdTypeDef LPCmd;
 DSI_PLLInitTypeDef dsiPllInit;
 static RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
 OTM8009A_Object_t *pObj;
+
+typedef enum { FRONT_SCREEN } Scene_t;
+
+typedef struct {
+   Scene_t scene;
+   uint8_t status_message[50];
+   uint32_t status_color;
+   uint16_t progress_bar;
+   uint32_t timer;
+   uint32_t timer_left;
+} App_t;
 /* Private define ------------------------------------------------------------*/
 
 #define VSYNC 1
@@ -57,6 +68,9 @@ OTM8009A_Object_t *pObj;
 
 #define TS_ACCURACY 2
 #define TS_INSTANCE 0
+
+#define APP_COLOR_BACKGROUND UTIL_LCD_COLOR_BLACK
+#define APP_COLOR_RED UTIL_LCD_COLOR_RED
 
 #define LAYER0_ADDRESS (LCD_FB_START_ADDRESS)
 
@@ -86,9 +100,14 @@ static void LCD_BriefDisplay(void);
 /* Display functions */
 static void LCD_Display_SetFrontScreen(void);
 static void LCD_Display_SetStatus(uint8_t *ptr);
+static void LCD_Display_ProgressBar(uint16_t progress, uint32_t color);
 
 /* TouchScreen functions */
 int32_t TS_Init(void);
+
+/* Main app logic functions */
+static void APP_HandleTouch(TS_State_t *TS_State, App_t *app);
+static void APP_UpdateScene(App_t *app);
 
 static void CPU_CACHE_Enable(void);
 static void MPU_Config(void);
@@ -173,33 +192,32 @@ int main(void)
    __HAL_DSI_WRAPPER_ENABLE(&hlcd_dsi);
 
    /* Clear display */
-   UTIL_LCD_Clear(UTIL_LCD_COLOR_BLACK);
+   UTIL_LCD_Clear(APP_COLOR_BACKGROUND);
 
    /* Display example brief   */
-   LCD_Display_SetFrontScreen();
+   // LCD_Display_SetFrontScreen();
 
    /*Refresh the LCD display*/
    HAL_DSI_Refresh(&hlcd_dsi);
 
+   /* Create App struct */
+   App_t app;
+   app.progress_bar = 100;
+   app.scene = FRONT_SCREEN;
+   sprintf(app.status_message, "  Stopped");
+   app.status_color = APP_COLOR_RED;
+   app.progress_bar = 100;
+
+   TS_State_t TS_State;
+
    /* Infinite loop */
    while (1) {
 
-      TS_State_t TS_State;
       BSP_TS_GetState(TS_INSTANCE, &TS_State);
-
-      if (TS_State.TouchDetected != 0U) {
-         BSP_LED_On(LED1);
-         BSP_LED_Off(LED2);
-         LCD_Display_SetStatus(
-             (uint8_t *)"  Touch detected                        ");
-         HAL_DSI_Refresh(&hlcd_dsi);
-      } else {
-         BSP_LED_On(LED2);
-         BSP_LED_Off(LED1);
-         LCD_Display_SetStatus(
-             (uint8_t *)"  Touch not detected                    ");
-         HAL_DSI_Refresh(&hlcd_dsi);
-      }
+      /* Handel touch && Update app struct */
+      APP_HandleTouch(&TS_State, &app);
+      /* Render display by app struct */
+      APP_UpdateScene(&app);
 
       // HAL_Delay(100);
    }
@@ -575,8 +593,37 @@ static void LCD_Display_SetStatus(uint8_t *ptr)
 {
    UTIL_LCD_SetFont(&Font16);
    UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_WHITE);
-   UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_BLACK);
+   UTIL_LCD_SetBackColor(APP_COLOR_BACKGROUND);
    UTIL_LCD_DisplayStringAtLine(26, ptr);
+}
+
+static void LCD_Display_ProgressBar(uint16_t progress, uint32_t color)
+{
+   /* Clean space */
+   UTIL_LCD_FillRect(00, 440, 800, 20, APP_COLOR_BACKGROUND);
+   UTIL_LCD_FillRect(20, 440, (uint32_t)(progress * 7.60), 20, color);
+}
+
+static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
+{
+   if (TS_State->TouchDetected != 0U) {
+      sprintf(app->status_message, "  Touch detected  [x: %d y: %d]",
+              TS_State->TouchX, TS_State->TouchY);
+   } else {
+      sprintf(app->status_message, "  Touch not detected                  ");
+   }
+}
+static void APP_UpdateScene(App_t *app)
+{
+   /* Update status message */
+   LCD_Display_SetStatus(app->status_message);
+
+   /* Update progress bar*/
+   LCD_Display_ProgressBar(app->progress_bar, app->status_color);
+
+   HAL_Delay(10);
+   /*Refresh the LCD display*/
+   HAL_DSI_Refresh(&hlcd_dsi);
 }
 
 int32_t TS_Init(void)

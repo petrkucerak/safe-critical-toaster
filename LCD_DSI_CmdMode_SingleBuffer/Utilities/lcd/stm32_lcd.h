@@ -83,6 +83,7 @@
  * @brief Custom LCD colors
  */
 #define UTIL_LCD_COLOR_CUSTOM_Blue   0xAA4D6DFFUL
+#define UTIL_LCD_COLOR_CUSTOM_Yellow 0xFFFFCC00UL
 
 
 /* Definition of Official ST Colors */

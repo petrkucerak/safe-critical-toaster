@@ -56,6 +56,7 @@ typedef struct {
    uint32_t status_color;
    uint16_t progress_bar;
    uint32_t timer;
+   uint32_t config_timer;
    uint32_t timer_left;
    uint32_t timer_start_time;
    uint32_t button_left_color;
@@ -85,6 +86,7 @@ typedef struct {
 #define APP_COLOR_BLUE UTIL_LCD_COLOR_CUSTOM_Blue
 #define APP_COLOR_TEXT UTIL_LCD_COLOR_WHITE
 #define APP_COLOR_GREEN UTIL_LCD_COLOR_DARKGREEN
+#define APP_COLOR_YELLOW UTIL_LCD_COLOR_CUSTOM_Yellow
 
 #define LAYER0_ADDRESS (LCD_FB_START_ADDRESS)
 
@@ -119,6 +121,7 @@ static void LCD_Display_SetTitle(uint8_t *ptr);
 static void LCD_Display_LeftButton(App_t *app);
 static void LCD_Display_RightButton(App_t *app);
 static void LCD_Display_ButtonTitles(App_t *app);
+static void LCD_Display_TimerButton(App_t *app);
 
 /* TouchScreen functions */
 int32_t TS_Init(void);
@@ -134,6 +137,7 @@ static void APP_UpdateTimer(App_t *app);
 
 static void TO_FRONT_SCENE(App_t *app);
 static void TO_MANUALLY_SCENE(App_t *app);
+static void TO_TIMER_CONFIG_SCENE(App_t *app);
 
 static void CPU_CACHE_Enable(void);
 static void MPU_Config(void);
@@ -645,10 +649,31 @@ static void LCD_Display_ProgressBar(uint16_t progress, uint32_t color)
    UTIL_LCD_FillRect(20, 440, (uint32_t)(progress * 7.60), 20, color);
 }
 
+static void LCD_Display_TimerButton(App_t *app)
+{
+   UTIL_LCD_SetFont(&FontMenlo32);
+   UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
+   UTIL_LCD_SetBackColor(APP_COLOR_BACKGROUND);
+   UTIL_LCD_DisplayStringAtLine(4, (uint8_t *)"         +");
+   UTIL_LCD_DisplayStringAtLine(9, (uint8_t *)"         -");
+   uint8_t buf[40];
+   uint32_t tmp = app->config_timer / SECOND; // from miliseconds to seconds
+   uint32_t h = tmp / 3600;
+   tmp %= 3600;
+   uint32_t m = tmp / 60;
+   uint32_t s = tmp % 60;
+   sprintf(buf, "       %02d:%02d:%02d", h, m, s);
+   UTIL_LCD_SetFont(&FontAvenirNext20);
+   UTIL_LCD_DisplayStringAtLine(11, (uint8_t *)&buf);
+}
+
 static void LCD_Display_LeftButton(App_t *app)
 {
    if (app->button_left_type == PUSH_BUTTON) {
       UTIL_LCD_FillCircle(200, 220, 90, app->button_left_color);
+   } else if (app->button_left_type == TIMER_BUTTON) {
+      UTIL_LCD_FillCircle(200, 220, 90, APP_COLOR_BACKGROUND);
+      LCD_Display_TimerButton(app);
    }
 }
 
@@ -664,12 +689,20 @@ static void LCD_Display_ButtonTitles(App_t *app)
    UTIL_LCD_SetFont(&FontAvenirNext20);
    UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
    UTIL_LCD_SetBackColor(APP_COLOR_BACKGROUND);
-   if (app->scene == FRONT_SCREEN) {
+   switch (app->scene) {
+   case FRONT_SCREEN:
       UTIL_LCD_DisplayStringAtLine(
           17, (uint8_t *)"     MANUALLY START          SETUP TIMER");
-   } else if (app->scene == MANUALLY_SCENE) {
+      break;
+   case MANUALLY_SCENE:
       UTIL_LCD_DisplayStringAtLine(
           17, (uint8_t *)"     MANUALLY STOP           SETUP TIMER");
+      break;
+
+   case TIMER_CONFIG_SCENE:
+      UTIL_LCD_DisplayStringAtLine(
+          17, (uint8_t *)"                             START TIMER");
+      break;
    }
 }
 
@@ -723,7 +756,17 @@ static void TO_MANUALLY_SCENE(App_t *app)
    app->timer = 1 * 60 * SECOND; // 1 min
    APP_StartTimer(app);
 }
+static void TO_TIMER_CONFIG_SCENE(App_t *app)
+{
+   app->_delay = 1;
+   app->scene = TIMER_CONFIG_SCENE;
+   app->button_right_color = APP_COLOR_GREEN;
+   app->button_left_type = TIMER_BUTTON;
+   app->status_color = APP_COLOR_YELLOW;
+   sprintf(app->status_message, "  Delay configuration          ");
 
+   app->config_timer = 17 * 60 * SECOND + 21 * SECOND; // default 17 min and 21 s
+}
 static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
 {
    if (TS_State->TouchDetected != 0U) {
@@ -742,23 +785,23 @@ static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
 
       } else if (APP_HandleTouch_IsInInterval(TS_State, 320, 160, 670, 539)) {
          /* Detect right button push */
-         sprintf(app->status_message, "  Right button pushed!            ");
-         if (app->scene == FRONT_SCREEN)
-            app->scene = TIMER_CONFIG_SCENE;
-
-      } else {
-         sprintf(app->status_message, "  No button pushed!               ");
+         switch (app->scene) {
+         case FRONT_SCREEN:
+            TO_TIMER_CONFIG_SCENE(app);
+            break;
+         }
       }
    }
 }
 static void APP_UpdateScene(App_t *app)
 {
-   /* Update left button */
-   LCD_Display_LeftButton(app);
-   /* Update right button */
-   LCD_Display_RightButton(app);
    /* Update button titles by scene */
    LCD_Display_ButtonTitles(app);
+
+   /* Update right button */
+   LCD_Display_RightButton(app);
+   /* Update left button */
+   LCD_Display_LeftButton(app);
 
    /* Update title */
    LCD_Display_SetTitle(app->title);

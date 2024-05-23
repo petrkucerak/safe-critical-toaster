@@ -45,11 +45,12 @@ DSI_PLLInitTypeDef dsiPllInit;
 static RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
 OTM8009A_Object_t *pObj;
 
-typedef enum { FRONT_SCREEN } Scene_t;
+typedef enum { FRONT_SCREEN, MANUALLY_SCENE, TIMER_CONFIG_SCENE } Scene_t;
 typedef enum { PUSH_BUTTON, TIMER_BUTTON } Button_type_t;
 
 typedef struct {
    Scene_t scene;
+   uint8_t _delay;
    uint8_t status_message[50];
    uint8_t title[50];
    uint32_t status_color;
@@ -79,6 +80,7 @@ typedef struct {
 #define APP_COLOR_RED UTIL_LCD_COLOR_RED
 #define APP_COLOR_BLUE UTIL_LCD_COLOR_CUSTOM_Blue
 #define APP_COLOR_TEXT UTIL_LCD_COLOR_WHITE
+#define APP_COLOR_GREEN UTIL_LCD_COLOR_DARKGREEN
 
 #define LAYER0_ADDRESS (LCD_FB_START_ADDRESS)
 
@@ -120,6 +122,9 @@ int32_t TS_Init(void);
 /* Main app logic functions */
 static void APP_HandleTouch(TS_State_t *TS_State, App_t *app);
 static void APP_UpdateScene(App_t *app);
+uint8_t APP_HandleTouch_IsInInterval(TS_State_t *s, uint32_t x_max,
+                                     uint32_t x_min, uint32_t y_max,
+                                     uint32_t y_min);
 
 static void CPU_CACHE_Enable(void);
 static void MPU_Config(void);
@@ -222,6 +227,7 @@ int main(void)
    app.button_left_type = PUSH_BUTTON;
    app.button_right_color = APP_COLOR_BLUE;
    app.button_right_type = PUSH_BUTTON;
+   app._delay = 0;
 
    TS_State_t TS_State;
 
@@ -649,16 +655,56 @@ static void LCD_Display_ButtonTitles(App_t *app)
    if (app->scene == FRONT_SCREEN) {
       UTIL_LCD_DisplayStringAtLine(
           17, (uint8_t *)"     MANUALLY START          SETUP TIMER");
+   } else if (app->scene == MANUALLY_SCENE) {
+      UTIL_LCD_DisplayStringAtLine(
+          17, (uint8_t *)"     MANUALLY STOP           SETUP TIMER");
    }
+}
+
+uint8_t APP_HandleTouch_IsInInterval(TS_State_t *s, uint32_t x_max,
+                                     uint32_t x_min, uint32_t y_max,
+                                     uint32_t y_min)
+{
+   if (s->TouchX < x_max && s->TouchX > x_min && s->TouchY < y_max &&
+       s->TouchY > y_min)
+      return 1;
+   else
+      return 0;
 }
 
 static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
 {
    if (TS_State->TouchDetected != 0U) {
-      sprintf(app->status_message, "  Touch detected  [x: %d y: %d]",
-              TS_State->TouchX, TS_State->TouchY);
-   } else {
-      sprintf(app->status_message, "  Touch not detected                  ");
+      if (APP_HandleTouch_IsInInterval(TS_State, 320, 160, 283, 125)) {
+         /* Detect left button push */
+         app->_delay = 1;
+         switch (app->scene) {
+            /* PUSH MANUALLY START button -> Set up MANUALLY_SCENE */
+         case FRONT_SCREEN:
+            app->scene = MANUALLY_SCENE;
+            app->button_left_color = APP_COLOR_RED;
+            sprintf(app->status_message, "  Started manually             ");
+            app->status_color = APP_COLOR_GREEN;
+            break;
+            /* PUSH MANUALLY STOP button -> Set up FRONT_SCREEN */
+         case MANUALLY_SCENE:
+            app->scene = FRONT_SCREEN;
+            app->button_left_color = APP_COLOR_BLUE;
+            sprintf(app->status_message, "  Stopped             ");
+            app->status_color = APP_COLOR_RED;
+            break;
+         }
+
+      } else if (APP_HandleTouch_IsInInterval(TS_State, 320, 160, 670, 539)) {
+         app->_delay = 1;
+         /* Detect right button push */
+         sprintf(app->status_message, "  Right button pushed!            ");
+         if (app->scene == FRONT_SCREEN)
+            app->scene = TIMER_CONFIG_SCENE;
+
+      } else {
+         sprintf(app->status_message, "  No button pushed!               ");
+      }
    }
 }
 static void APP_UpdateScene(App_t *app)
@@ -680,6 +726,10 @@ static void APP_UpdateScene(App_t *app)
    /*Refresh the LCD display*/
    HAL_Delay(10);
    HAL_DSI_Refresh(&hlcd_dsi);
+   if (app->_delay) {
+      HAL_Delay(1000);
+      app->_delay = 0;
+   }
 }
 
 int32_t TS_Init(void)

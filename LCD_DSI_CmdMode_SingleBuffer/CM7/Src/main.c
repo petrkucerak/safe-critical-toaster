@@ -234,7 +234,7 @@ int main(void)
    app.timer = 0;
    app.scene = FRONT_SCREEN;
    sprintf(app.status_message, "  Toaster is stopped                         ");
-   sprintf(app.title, "            ~ TOUSTER CONTROLLER ~");
+   sprintf(app.title, "            ~ TOASTER CONTROLLER ~");
    app.status_color = APP_COLOR_RED;
    app.button_left_color = APP_COLOR_GREEN;
    app.button_left_type = PUSH_BUTTON;
@@ -256,8 +256,6 @@ int main(void)
 
       /* Render display by app struct */
       APP_UpdateScene(&app);
-
-      // HAL_Delay(100);
    }
 }
 /**
@@ -583,6 +581,11 @@ void LCD_MspInit(void)
    HAL_NVIC_EnableIRQ(DSI_IRQn);
 }
 
+/**
+ * @brief Setup status message above the progress bar.
+ *
+ * @param ptr pointer to array of chars
+ */
 static void LCD_Display_SetStatus(char *ptr)
 {
    UTIL_LCD_SetFont(&Font16);
@@ -591,6 +594,11 @@ static void LCD_Display_SetStatus(char *ptr)
    UTIL_LCD_DisplayStringAtLine(26, ptr);
 }
 
+/**
+ * @brief Setup title and header background.
+ *
+ * @param ptr pointer to array of chars
+ */
 static void LCD_Display_SetTitle(char *ptr)
 {
    UTIL_LCD_FillRect(0, 0, 800, 75, APP_COLOR_STONE);
@@ -601,6 +609,12 @@ static void LCD_Display_SetTitle(char *ptr)
    // UTIL_LCD_FillRect(170, 80, 460, 1, APP_COLOR_TEXT);
 }
 
+/**
+ * @brief Render progress bar.
+ *
+ * @param progress progress in interval 0-100 %
+ * @param color color of progress bar, color formate is argc
+ */
 static void LCD_Display_ProgressBar(uint16_t progress, uint32_t color)
 {
    /* Clean space */
@@ -609,6 +623,11 @@ static void LCD_Display_ProgressBar(uint16_t progress, uint32_t color)
    UTIL_LCD_FillRect(20, 440, (uint32_t)(progress * 7.60), 20, color);
 }
 
+/**
+ * @brief Render special timer button for config time.
+ *
+ * @param app
+ */
 static void LCD_Display_TimerButton(App_t *app)
 {
    UTIL_LCD_SetFont(&FontMenlo32);
@@ -627,6 +646,13 @@ static void LCD_Display_TimerButton(App_t *app)
    UTIL_LCD_DisplayStringAtLine(11, (uint8_t *)&buf);
 }
 
+/**
+ * @brief Render the left button. The left button can by displayed in 2 options:
+ * PUSH_BUTTON and TIMER_BUTTON. The PUSH_BUTTON is classical mode, TIMER_BUTTON
+ * is used for config timer value.
+ *
+ * @param app
+ */
 static void LCD_Display_LeftButton(App_t *app)
 {
    if (app->button_left_type == PUSH_BUTTON) {
@@ -638,6 +664,14 @@ static void LCD_Display_LeftButton(App_t *app)
    }
 }
 
+/**
+ * @brief Render the right button, that can by displayed in 2 options as
+ * PUSH_BUTTON or as NONE. The PUSH_BUTTON render classical button. The NONE
+ * options render circle in same color as a background, so there will be
+ * nothing.
+ *
+ * @param app
+ */
 static void LCD_Display_RightButton(App_t *app)
 {
    if (app->button_right_type == PUSH_BUTTON) {
@@ -648,6 +682,13 @@ static void LCD_Display_RightButton(App_t *app)
    }
 }
 
+/**
+ * @brief Render titles under the buttons. There are a four options
+ * (FRONT_SCREEN, MANUALLY_SCREEN, TIMER_CONFIG_SCENE and WAITING_SCENE) thats
+ * switched by app scene.
+ *
+ * @param app
+ */
 static void LCD_Display_ButtonTitles(App_t *app)
 {
    UTIL_LCD_SetFont(&FontAvenirNext20);
@@ -674,6 +715,17 @@ static void LCD_Display_ButtonTitles(App_t *app)
    }
 }
 
+/**
+ * @brief The util function to determine if the touch is in the area. The
+ * examined area is in the shape of a square.
+ *
+ * @param s (TS_State_t) The structure returned from touch screen
+ * @param x_max
+ * @param x_min
+ * @param y_max
+ * @param y_min
+ * @return uint8_t
+ */
 uint8_t APP_HandleTouch_IsInInterval(TS_State_t *s, uint32_t x_max,
                                      uint32_t x_min, uint32_t y_max,
                                      uint32_t y_min)
@@ -685,12 +737,22 @@ uint8_t APP_HandleTouch_IsInInterval(TS_State_t *s, uint32_t x_max,
       return 0;
 }
 
+/**
+ * @brief Start software timer thats work by sys ticks.
+ *
+ * @param app
+ */
 static void APP_StartTimer(App_t *app)
 {
    app->timer_left = app->timer;
    app->timer_start_time = HAL_GetTick();
 }
 
+/**
+ * @brief Update software timer by sys tick value.
+ *
+ * @param app
+ */
 static void APP_UpdateTimer(App_t *app)
 {
    if (app->timer != 0) {
@@ -706,6 +768,11 @@ static void APP_UpdateTimer(App_t *app)
    }
 }
 
+/**
+ * @brief Transition to the front page.
+ *
+ * @param app
+ */
 static void TO_FRONT_SCENE(App_t *app)
 {
    app->_delay = 1;
@@ -720,6 +787,12 @@ static void TO_FRONT_SCENE(App_t *app)
 
    app->timer = 0;
 }
+
+/**
+ * @brief Transition to the manual page.
+ *
+ * @param app
+ */
 static void TO_MANUALLY_SCENE(App_t *app)
 {
    app->_delay = 1;
@@ -734,6 +807,12 @@ static void TO_MANUALLY_SCENE(App_t *app)
    app->timer = 1 * 60 * SECOND; // 1 min
    APP_StartTimer(app);
 }
+
+/**
+ * @brief Transition to the config scene.
+ *
+ * @param app
+ */
 static void TO_TIMER_CONFIG_SCENE(App_t *app)
 {
    app->_delay = 1;
@@ -746,6 +825,12 @@ static void TO_TIMER_CONFIG_SCENE(App_t *app)
    app->config_timer =
        17 * 60 * SECOND + 21 * SECOND; // default 17 min and 21 s
 }
+
+/**
+ * @brief Transition to the waiting scene.
+ *
+ * @param app
+ */
 static void TO_WAITING_SCENE(App_t *app)
 {
    app->_delay = 1;
@@ -760,6 +845,13 @@ static void TO_WAITING_SCENE(App_t *app)
            app->timer / (60 * SECOND));
    APP_StartTimer(app);
 }
+
+/**
+ * @brief One of three main logic function thats handle touch screen.
+ *
+ * @param TS_State
+ * @param app
+ */
 static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
 {
    if (TS_State->TouchDetected != 0U) {
@@ -803,6 +895,12 @@ static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
       }
    }
 }
+
+/**
+ * @brief One of three main logic function thats render data on display.
+ *
+ * @param app
+ */
 static void APP_UpdateScene(App_t *app)
 {
    /* Update button titles by scene */
@@ -839,6 +937,11 @@ static void APP_UpdateScene(App_t *app)
    }
 }
 
+/**
+ * @brief Init touch screen.
+ *
+ * @return int32_t
+ */
 int32_t TS_Init(void)
 {
    /* TS_Init */

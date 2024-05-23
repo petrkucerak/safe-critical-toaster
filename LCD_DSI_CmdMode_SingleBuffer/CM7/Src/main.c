@@ -46,14 +46,20 @@ static RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
 OTM8009A_Object_t *pObj;
 
 typedef enum { FRONT_SCREEN } Scene_t;
+typedef enum { PUSH_BUTTON, TIMER_BUTTON } Button_type_t;
 
 typedef struct {
    Scene_t scene;
    uint8_t status_message[50];
+   uint8_t title[50];
    uint32_t status_color;
    uint16_t progress_bar;
    uint32_t timer;
    uint32_t timer_left;
+   uint32_t button_left_color;
+   Button_type_t button_left_type;
+   uint32_t button_right_color;
+   Button_type_t button_right_type;
 } App_t;
 /* Private define ------------------------------------------------------------*/
 
@@ -71,6 +77,8 @@ typedef struct {
 
 #define APP_COLOR_BACKGROUND UTIL_LCD_COLOR_BLACK
 #define APP_COLOR_RED UTIL_LCD_COLOR_RED
+#define APP_COLOR_BLUE UTIL_LCD_COLOR_CUSTOM_Blue
+#define APP_COLOR_TEXT UTIL_LCD_COLOR_WHITE
 
 #define LAYER0_ADDRESS (LCD_FB_START_ADDRESS)
 
@@ -101,6 +109,10 @@ static void LCD_BriefDisplay(void);
 static void LCD_Display_SetFrontScreen(void);
 static void LCD_Display_SetStatus(uint8_t *ptr);
 static void LCD_Display_ProgressBar(uint16_t progress, uint32_t color);
+static void LCD_Display_SetTitle(uint8_t *ptr);
+static void LCD_Display_LeftButton(App_t *app);
+static void LCD_Display_RightButton(App_t *app);
+static void LCD_Display_ButtonTitles(App_t *app);
 
 /* TouchScreen functions */
 int32_t TS_Init(void);
@@ -159,8 +171,6 @@ int main(void)
 
    /* Initialize used Leds */
    BSP_LED_Init(LED3);
-   BSP_LED_Init(LED2);
-   BSP_LED_Init(LED1);
 
    /* Initialize the SDRAM */
    BSP_SDRAM_Init(0);
@@ -205,8 +215,13 @@ int main(void)
    app.progress_bar = 100;
    app.scene = FRONT_SCREEN;
    sprintf(app.status_message, "  Stopped");
+   sprintf(app.title, "           TOUSTER CONTROLLER");
    app.status_color = APP_COLOR_RED;
    app.progress_bar = 100;
+   app.button_left_color = APP_COLOR_BLUE;
+   app.button_left_type = PUSH_BUTTON;
+   app.button_right_color = APP_COLOR_BLUE;
+   app.button_right_type = PUSH_BUTTON;
 
    TS_State_t TS_State;
 
@@ -554,8 +569,8 @@ static void LCD_BriefDisplay(void)
    UTIL_LCD_SetFont(&Font24);
    UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_BLUE);
    UTIL_LCD_FillRect(0, 0, 800, 112, UTIL_LCD_COLOR_BLUE);
-   UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_WHITE);
-   UTIL_LCD_FillRect(0, 112, 800, 368, UTIL_LCD_COLOR_WHITE);
+   UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
+   UTIL_LCD_FillRect(0, 112, 800, 368, APP_COLOR_TEXT);
    UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_BLUE);
    UTIL_LCD_DisplayStringAtLine(
        1, (uint8_t *)"       LCD_DSI_CmdMode_SingleBuffer");
@@ -569,7 +584,7 @@ static void LCD_BriefDisplay(void)
 static void LCD_Display_SetFrontScreen(void)
 {
    UTIL_LCD_SetFont(&FontMenlo32);
-   UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_WHITE);
+   UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
    UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_BLACK);
    UTIL_LCD_DisplayStringAtLine(2, (uint8_t *)"           TOUSTER CONTROLLER");
 
@@ -577,13 +592,13 @@ static void LCD_Display_SetFrontScreen(void)
    UTIL_LCD_FillCircle(600, 220, 90, UTIL_LCD_COLOR_CUSTOM_Blue);
 
    UTIL_LCD_SetFont(&FontAvenirNext20);
-   UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_WHITE);
+   UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
    UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_BLACK);
    UTIL_LCD_DisplayStringAtLine(
        17, (uint8_t *)"     MANUALLY START          SETUP TIMER");
 
    UTIL_LCD_SetFont(&Font16);
-   UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_WHITE);
+   UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
    UTIL_LCD_SetBackColor(UTIL_LCD_COLOR_BLACK);
    UTIL_LCD_DisplayStringAtLine(26, (uint8_t *)"  Stopped                    ");
    UTIL_LCD_FillRect(20, 440, 760, 20, UTIL_LCD_COLOR_RED);
@@ -592,9 +607,17 @@ static void LCD_Display_SetFrontScreen(void)
 static void LCD_Display_SetStatus(uint8_t *ptr)
 {
    UTIL_LCD_SetFont(&Font16);
-   UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_WHITE);
+   UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
    UTIL_LCD_SetBackColor(APP_COLOR_BACKGROUND);
    UTIL_LCD_DisplayStringAtLine(26, ptr);
+}
+
+static void LCD_Display_SetTitle(uint8_t *ptr)
+{
+   UTIL_LCD_SetFont(&FontMenlo32);
+   UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
+   UTIL_LCD_SetBackColor(APP_COLOR_BACKGROUND);
+   UTIL_LCD_DisplayStringAtLine(2, ptr);
 }
 
 static void LCD_Display_ProgressBar(uint16_t progress, uint32_t color)
@@ -602,6 +625,31 @@ static void LCD_Display_ProgressBar(uint16_t progress, uint32_t color)
    /* Clean space */
    UTIL_LCD_FillRect(00, 440, 800, 20, APP_COLOR_BACKGROUND);
    UTIL_LCD_FillRect(20, 440, (uint32_t)(progress * 7.60), 20, color);
+}
+
+static void LCD_Display_LeftButton(App_t *app)
+{
+   if (app->button_left_type == PUSH_BUTTON) {
+      UTIL_LCD_FillCircle(200, 220, 90, app->button_left_color);
+   }
+}
+
+static void LCD_Display_RightButton(App_t *app)
+{
+   if (app->button_right_type == PUSH_BUTTON) {
+      UTIL_LCD_FillCircle(600, 220, 90, app->button_right_color);
+   }
+}
+
+static void LCD_Display_ButtonTitles(App_t *app)
+{
+   UTIL_LCD_SetFont(&FontAvenirNext20);
+   UTIL_LCD_SetTextColor(APP_COLOR_TEXT);
+   UTIL_LCD_SetBackColor(APP_COLOR_BACKGROUND);
+   if (app->scene == FRONT_SCREEN) {
+      UTIL_LCD_DisplayStringAtLine(
+          17, (uint8_t *)"     MANUALLY START          SETUP TIMER");
+   }
 }
 
 static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
@@ -615,14 +663,22 @@ static void APP_HandleTouch(TS_State_t *TS_State, App_t *app)
 }
 static void APP_UpdateScene(App_t *app)
 {
+   /* Update left button */
+   LCD_Display_LeftButton(app);
+   /* Update right button */
+   LCD_Display_RightButton(app);
+   /* Update button titles by scene */
+   LCD_Display_ButtonTitles(app);
+
+   /* Update title */
+   LCD_Display_SetTitle(app->title);
    /* Update status message */
    LCD_Display_SetStatus(app->status_message);
-
    /* Update progress bar*/
    LCD_Display_ProgressBar(app->progress_bar, app->status_color);
 
-   HAL_Delay(10);
    /*Refresh the LCD display*/
+   HAL_Delay(10);
    HAL_DSI_Refresh(&hlcd_dsi);
 }
 

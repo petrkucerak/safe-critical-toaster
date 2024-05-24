@@ -14,4 +14,4 @@ The goal of my project is to create a device that will allow controlling the toa
 - multi-core communication (using shared memory and using atomic variables)
 - software emulated timer
 
-More details are in [Project Report.pdf](assets\AVS_ProjectReport.pdf)
+More details are in [Project Report.pdf](assets/AVS_ProjectReport.pdf)
